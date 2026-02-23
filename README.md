@@ -40,4 +40,4 @@ A simple web-based text and file hashing tool built with **HTML, CSS, and JavaSc
 
 ## Made By
 
-**Jit** — School Project 2026
+**Jitraj** — 2026
