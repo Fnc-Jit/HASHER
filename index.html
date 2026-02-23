@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="HASHER — Encrypt and hash your text or PDF files with multiple algorithms. Download hash files and generate secret keys securely.">
+    <title>HASHER — Secure Text & File Hashing</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="bgParticles"></div>
+
+    <!-- Top Navigation -->
+    <header class="top-bar">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <rect x="2" y="2" width="24" height="24" rx="6" stroke="url(#logoGrad)" stroke-width="2.5" />
+                    <path d="M9 14h10M14 9v10" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="14" cy="14" r="3" stroke="url(#logoGrad)" stroke-width="1.5" />
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                            <stop stop-color="#00f0ff" />
+                            <stop offset="1" stop-color="#a855f7" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <span class="logo-text">HASH<span class="logo-accent">ER</span></span>
+        </div>
+        <div class="top-right">
+            <nav class="top-nav">
+                <button class="nav-btn active" data-section="hasher" id="navHasher">
+                    <span class="nav-icon">⚡</span> Hasher
+                </button>
+                <button class="nav-btn" data-section="records" id="navRecords">
+                    <span class="nav-icon">📋</span> Records
+                </button>
+            </nav>
+            <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">
+                <span class="theme-icon" id="themeIcon">🌙</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- ==================== HASHER SECTION ==================== -->
+        <section class="section active" id="sectionHasher">
+            <div class="section-header">
+                <h1>Encrypt & Hash</h1>
+                <p class="section-subtitle">Transform your text or files into secure cryptographic hashes</p>
+            </div>
+
+            <div class="hasher-grid">
+                <!-- Left Column: Input -->
+                <div class="card input-card">
+                    <div class="card-header">
+                        <h2>Input</h2>
+                        <div class="input-toggle">
+                            <button class="toggle-btn active" id="toggleText" data-mode="text">Text</button>
+                            <button class="toggle-btn" id="toggleFile" data-mode="file">File</button>
+                        </div>
+                    </div>
+
+                    <!-- Text Input -->
+                    <div class="input-area" id="textInputArea">
+                        <textarea id="textInput" placeholder="Type or paste your text here..."
+                            spellcheck="false"></textarea>
+                        <div class="char-count"><span id="charCount">0</span> characters</div>
+                    </div>
+
+                    <!-- File Input -->
+                    <div class="input-area hidden" id="fileInputArea">
+                        <div class="drop-zone" id="dropZone">
+                            <div class="drop-icon">
+                                <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                                    <path d="M24 32V16m0 0l-8 8m8-8l8 8" stroke="currentColor" stroke-width="2.5"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M40 30v6a4 4 0 01-4 4H12a4 4 0 01-4-4v-6" stroke="currentColor"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </div>
+                            <p class="drop-text">Drag & drop your file here</p>
+                            <p class="drop-subtext">or click to browse</p>
+                            <p class="drop-formats">Supports: PDF, TXT, and any file type</p>
+                            <input type="file" id="fileInput" accept="*/*" hidden>
+                        </div>
+                        <div class="file-info hidden" id="fileInfo">
+                            <div class="file-badge">
+                                <span class="file-icon">📄</span>
+                                <div class="file-details">
+                                    <span class="file-name" id="fileName"></span>
+                                    <span class="file-size" id="fileSize"></span>
+                                </div>
+                                <button class="file-remove" id="fileRemove" title="Remove file">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Algorithm Selector -->
+                    <div class="algo-section">
+                        <label class="algo-label">Hash Algorithm</label>
+                        <div class="select-wrapper">
+                            <select id="hashAlgorithm">
+                                <option value="SHA-256" selected>SHA-256 — Standard Security</option>
+                                <option value="SHA-384">SHA-384 — Enhanced Security</option>
+                                <option value="SHA-512">SHA-512 — Maximum Security</option>
+                                <option value="SHA-1">SHA-1 — Legacy (Not Recommended)</option>
+                                <option value="MD5">MD5 — Legacy (Not Recommended)</option>
+                            </select>
+                            <span class="select-arrow">▾</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-row">
+                        <button class="btn btn-primary" id="hashBtn">
+                            <span class="btn-icon">🔒</span>
+                            <span class="btn-label">Hash It</span>
+                            <span class="btn-loading hidden" id="hashLoading">
+                                <span class="spinner"></span>
+                            </span>
+                        </button>
+                        <button class="btn btn-secret" id="secretKeyBtn" title="Generate Secret HMAC Key">
+                            <span class="btn-icon">🔑</span>
+                            <span class="btn-label">Secret Key</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Output -->
+                <div class="card output-card">
+                    <div class="card-header">
+                        <h2>Output</h2>
+                        <div class="algo-badge" id="algoBadge">SHA-256</div>
+                    </div>
+
+                    <!-- Secret Key Display -->
+                    <div class="secret-key-panel hidden" id="secretKeyPanel">
+                        <div class="key-header">
+                            <span class="key-label">🔑 HMAC Secret Key</span>
+                            <button class="key-action" id="regenerateKey" title="Regenerate">↻</button>
+                            <button class="key-action" id="removeKey" title="Remove key">✕</button>
+                        </div>
+                        <div class="key-value" id="secretKeyValue">—</div>
+                        <p class="key-note">HMAC mode active — hash will use this key</p>
+                    </div>
+
+                    <!-- Hash Result -->
+                    <div class="result-area" id="resultArea">
+                        <div class="result-placeholder" id="resultPlaceholder">
+                            <div class="placeholder-icon">
+                                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                    <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2"
+                                        stroke-dasharray="6 4" opacity="0.3" />
+                                    <path d="M26 32h12M32 26v12" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" opacity="0.4" />
+                                </svg>
+                            </div>
+                            <p>Your hash will appear here</p>
+                            <p class="placeholder-sub">Enter text or upload a file, then click <strong>Hash It</strong>
+                            </p>
+                        </div>
+                        <div class="result-content hidden" id="resultContent">
+                            <div class="result-meta">
+                                <span class="meta-item" id="resultAlgo"></span>
+                                <span class="meta-item" id="resultMode"></span>
+                                <span class="meta-item" id="resultTime"></span>
+                            </div>
+                            <div class="hash-display">
+                                <code class="hash-value" id="hashOutput"></code>
+                                <button class="copy-btn" id="copyBtn" title="Copy hash">
+                                    <span class="copy-icon">📋</span>
+                                    <span class="copy-label">Copy</span>
+                                </button>
+                            </div>
+                            <div class="result-actions">
+                                <button class="btn btn-download" id="downloadBtn">
+                                    <span class="btn-icon">⬇️</span>
+                                    <span class="btn-label">Download .hash File</span>
+                                </button>
+                                <button class="btn btn-outline" id="saveRecordBtn">
+                                    <span class="btn-icon">💾</span>
+                                    <span class="btn-label">Save Record</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== RECORDS SECTION ==================== -->
+        <section class="section" id="sectionRecords">
+            <div class="section-header">
+                <h1>Hash Records</h1>
+                <p class="section-subtitle">History of all your hashing operations</p>
+            </div>
+
+            <div class="card records-card">
+                <div class="records-toolbar">
+                    <div class="records-count"><span id="recordCount">0</span> records</div>
+                    <div class="records-actions">
+                        <button class="btn btn-small btn-outline" id="exportRecordsBtn">Export CSV</button>
+                        <button class="btn btn-small btn-danger" id="clearRecordsBtn">Clear All</button>
+                    </div>
+                </div>
+                <div class="records-table-wrapper">
+                    <table class="records-table" id="recordsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Timestamp</th>
+                                <th>Source</th>
+                                <th>Algorithm</th>
+                                <th>Hash</th>
+                                <th>HMAC</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsBody">
+                        </tbody>
+                    </table>
+                    <div class="records-empty" id="recordsEmpty">
+                        <p>No records yet. Start hashing to build your history.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
