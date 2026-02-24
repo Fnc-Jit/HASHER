@@ -1,12 +1,9 @@
-/* ============================================================
-   HASHER — app.js
-   Pure vanilla JS: hashing, file handling, Supabase REST, UI
-   ============================================================ */
+
 
 (function () {
     'use strict';
 
-    // ───────── State ─────────
+    
     const state = {
         mode: 'text',           // 'text' | 'file'
         file: null,             // File object
@@ -20,7 +17,6 @@
         },
     };
 
-    // ───────── DOM refs ─────────
     const $ = (id) => document.getElementById(id);
 
     const dom = {
