@@ -3,7 +3,7 @@
 (function () {
     'use strict';
 
-    
+
     const state = {
         mode: 'text',           // 'text' | 'file'
         file: null,             // File object
@@ -114,6 +114,9 @@
         crackTotalAttempts: $('crackTotalAttempts'),
         crackTotalTime: $('crackTotalTime'),
         crackAvgSpeed: $('crackAvgSpeed'),
+        dehashHmacKey: $('dehashHmacKey'),
+        dehashHmacClear: $('dehashHmacClear'),
+        dehashHmacHint: $('dehashHmacHint'),
     };
 
     // ───────── Init ─────────
@@ -216,6 +219,20 @@
         dom.crackBtn.onclick = startCrack;
         dom.crackStopBtn.onclick = stopCrack;
         dom.copyPlaintextBtn.onclick = copyPlaintext;
+        dom.dehashHmacClear.onclick = () => {
+            dom.dehashHmacKey.value = '';
+            dom.dehashHmacHint.textContent = 'Leave empty for standard digest hashes. Provide the hex key if the hash used HMAC.';
+            dom.dehashHmacHint.classList.remove('hmac-active');
+        };
+        dom.dehashHmacKey.oninput = () => {
+            if (dom.dehashHmacKey.value.trim()) {
+                dom.dehashHmacHint.textContent = '🔑 HMAC mode — cracking will use this key for hashing.';
+                dom.dehashHmacHint.classList.add('hmac-active');
+            } else {
+                dom.dehashHmacHint.textContent = 'Leave empty for standard digest hashes. Provide the hex key if the hash used HMAC.';
+                dom.dehashHmacHint.classList.remove('hmac-active');
+            }
+        };
     }
 
     // ───────── Input Mode ─────────
@@ -524,8 +541,13 @@
         }
     }
 
-    async function hashText(text, algo) {
+    async function hashText(text, algo, hmacKey) {
         const data = new TextEncoder().encode(text);
+        if (hmacKey) {
+            // HMAC mode
+            const sig = await crypto.subtle.sign('HMAC', hmacKey, data);
+            return bufToHex(sig);
+        }
         if (algo === 'MD5') return md5(data);
         const buf = await crypto.subtle.digest(algo, data);
         return bufToHex(buf);
@@ -547,7 +569,25 @@
         if (!/^[a-f0-9]+$/.test(targetHash)) { toast('Invalid hash — must be a hex string.', 'error'); return; }
 
         const algo = dom.dehashAlgorithm.value;
+        const hmacHex = dom.dehashHmacKey.value.trim();
+        let hmacKey = null;
         crackAbort = false;
+
+        // Import HMAC key if provided
+        if (hmacHex) {
+            if (!/^[a-f0-9]+$/i.test(hmacHex)) {
+                toast('Invalid HMAC key — must be a hex string.', 'error'); return;
+            }
+            try {
+                const keyBytes = new Uint8Array(hmacHex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+                const hmacAlgo = algo === 'MD5' ? 'SHA-256' : algo;
+                hmacKey = await crypto.subtle.importKey(
+                    'raw', keyBytes, { name: 'HMAC', hash: hmacAlgo }, false, ['sign']
+                );
+            } catch (err) {
+                toast('Failed to import HMAC key: ' + err.message, 'error'); return;
+            }
+        }
 
         // UI: show progress, hide placeholder
         dom.dehashPlaceholder.classList.add('hidden');
@@ -581,7 +621,7 @@
             for (let i = 0; i < DICTIONARY.length; i++) {
                 if (crackAbort) break;
                 const word = DICTIONARY[i];
-                const h = await hashText(word, algo);
+                const h = await hashText(word, algo, hmacKey);
                 totalAttempts++;
                 if (h === targetHash) { found = word; method = 'Dictionary'; break; }
                 if (i % 100 === 0) {
@@ -598,7 +638,7 @@
                     while (true) {
                         if (crackAbort) break outer;
                         const candidate = indices.map(i => chars[i]).join('');
-                        const h = await hashText(candidate, algo);
+                        const h = await hashText(candidate, algo, hmacKey);
                         totalAttempts++;
                         if (h === targetHash) { found = candidate; method = 'Brute Force'; break outer; }
 

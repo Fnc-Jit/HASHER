@@ -12,7 +12,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=5">
+    <link rel="stylesheet" href="style.css?v=6">
 </head>
 
 <body>
@@ -241,6 +241,18 @@
                         </div>
                     </div>
 
+                    <!-- HMAC Key (optional) -->
+                    <div class="algo-section">
+                        <label class="algo-label">HMAC Secret Key <span class="label-optional">(optional)</span></label>
+                        <div class="hmac-key-input-wrap">
+                            <input type="text" id="dehashHmacKey" class="hmac-key-input"
+                                placeholder="Paste hex key if hash was HMAC-signed…" spellcheck="false" />
+                            <button class="hmac-clear-btn" id="dehashHmacClear" title="Clear key">✕</button>
+                        </div>
+                        <p class="hmac-key-hint" id="dehashHmacHint">Leave empty for standard digest hashes. Provide the
+                            hex key if the hash used HMAC.</p>
+                    </div>
+
                     <!-- Method Info -->
                     <div class="algo-section">
                         <label class="algo-label">Crack Method</label>
@@ -453,7 +465,7 @@
     <!-- Toast Notification -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 </body>
 
 </html>
