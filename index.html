@@ -12,7 +12,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 
 <body>
@@ -41,6 +41,9 @@
             <nav class="top-nav">
                 <button class="nav-btn active" data-section="hasher" id="navHasher">
                     <span class="nav-icon">⚡</span> Hasher
+                </button>
+                <button class="nav-btn" data-section="dehasher" id="navDehasher">
+                    <span class="nav-icon">🔓</span> DeHasher
                 </button>
                 <button class="nav-btn" data-section="records" id="navRecords">
                     <span class="nav-icon">📋</span> Records
@@ -201,6 +204,167 @@
             </div>
         </section>
 
+        <!-- ==================== DE-HASHER SECTION ==================== -->
+        <section class="section" id="sectionDehasher">
+            <div class="section-header">
+                <h1>De-Hash <span class="logo-accent">Crack</span></h1>
+                <p class="section-subtitle">Attempt to reverse a hash back to its original plaintext</p>
+            </div>
+
+            <div class="hasher-grid">
+                <!-- Left Column: Input -->
+                <div class="card input-card">
+                    <div class="card-header">
+                        <h2>Hash Input</h2>
+                    </div>
+
+                    <!-- Hash Input -->
+                    <div class="input-area">
+                        <textarea id="dehashInput"
+                            placeholder="Paste your hash here…\ne.g. 5f4dcc3b5aa765d61d8327deb882cf99"
+                            spellcheck="false" class="dehash-textarea"></textarea>
+                        <div class="char-count"><span id="dehashCharCount">0</span> characters</div>
+                    </div>
+
+                    <!-- Algorithm Selector -->
+                    <div class="algo-section">
+                        <label class="algo-label">Hash Algorithm</label>
+                        <div class="select-wrapper">
+                            <select id="dehashAlgorithm">
+                                <option value="MD5" selected>MD5</option>
+                                <option value="SHA-1">SHA-1</option>
+                                <option value="SHA-256">SHA-256</option>
+                                <option value="SHA-384">SHA-384</option>
+                                <option value="SHA-512">SHA-512</option>
+                            </select>
+                            <span class="select-arrow">▾</span>
+                        </div>
+                    </div>
+
+                    <!-- Method Info -->
+                    <div class="algo-section">
+                        <label class="algo-label">Crack Method</label>
+                        <div class="combined-method-badge">
+                            <span>🔄 Combined — Dictionary + Brute Force</span>
+                        </div>
+                    </div>
+
+                    <!-- Brute Force Config -->
+                    <div class="brute-config" id="bruteConfig">
+                        <div class="brute-option">
+                            <label class="algo-label">Max Length</label>
+                            <div class="select-wrapper">
+                                <select id="bruteMaxLen">
+                                    <option value="3">3 chars</option>
+                                    <option value="4" selected>4 chars</option>
+                                    <option value="5">5 chars</option>
+                                    <option value="6">6 chars (slow)</option>
+                                </select>
+                                <span class="select-arrow">▾</span>
+                            </div>
+                        </div>
+                        <div class="brute-option">
+                            <label class="algo-label">Character Set</label>
+                            <div class="select-wrapper">
+                                <select id="bruteCharset">
+                                    <option value="lower" selected>a–z (lowercase)</option>
+                                    <option value="alnum">a–z + 0–9</option>
+                                    <option value="full">a–z, A–Z, 0–9</option>
+                                </select>
+                                <span class="select-arrow">▾</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-row">
+                        <button class="btn btn-primary btn-crack" id="crackBtn">
+                            <span class="btn-icon">🔓</span>
+                            <span class="btn-label">Crack It</span>
+                            <span class="btn-loading hidden" id="crackLoading">
+                                <span class="spinner"></span>
+                            </span>
+                        </button>
+                        <button class="btn btn-outline" id="crackStopBtn" style="display:none;">
+                            <span class="btn-icon">⏹</span>
+                            <span class="btn-label">Stop</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Output -->
+                <div class="card output-card">
+                    <div class="card-header">
+                        <h2>Result</h2>
+                        <div class="algo-badge" id="dehashAlgoBadge">MD5</div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="crack-progress hidden" id="crackProgress">
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="crackProgressFill"></div>
+                        </div>
+                        <div class="progress-stats">
+                            <span id="crackAttempts">0</span> attempts
+                            <span class="progress-sep">·</span>
+                            <span id="crackSpeed">0</span> h/s
+                            <span class="progress-sep">·</span>
+                            <span id="crackElapsed">0.0s</span>
+                        </div>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div class="result-area" id="dehashResultArea">
+                        <div class="result-placeholder" id="dehashPlaceholder">
+                            <div class="placeholder-icon">
+                                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                    <circle cx="32" cy="32" r="24" stroke="currentColor" stroke-width="2"
+                                        stroke-dasharray="6 4" opacity="0.3" />
+                                    <path d="M26 28a6 6 0 0112 0v4H26v-4z" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" opacity="0.4" />
+                                    <rect x="24" y="32" width="16" height="12" rx="2" stroke="currentColor"
+                                        stroke-width="2" opacity="0.4" />
+                                </svg>
+                            </div>
+                            <p>Cracked plaintext will appear here</p>
+                            <p class="placeholder-sub">Paste a hash, pick the algorithm, then click <strong>Crack
+                                    It</strong></p>
+                        </div>
+                        <div class="crack-result hidden" id="crackResult">
+                            <div class="result-meta">
+                                <span class="meta-item" id="crackResultAlgo"></span>
+                                <span class="meta-item" id="crackResultMethod"></span>
+                                <span class="meta-item" id="crackResultTime"></span>
+                            </div>
+                            <div class="crack-found" id="crackFound">
+                                <div class="crack-status-icon" id="crackStatusIcon">✅</div>
+                                <div class="crack-status-label" id="crackStatusLabel">Plaintext Found!</div>
+                                <div class="crack-plaintext" id="crackPlaintext"></div>
+                                <button class="copy-btn" id="copyPlaintextBtn" title="Copy plaintext">
+                                    <span class="copy-icon">📋</span>
+                                    <span class="copy-label">Copy</span>
+                                </button>
+                            </div>
+                            <div class="crack-stats">
+                                <div class="crack-stat">
+                                    <span class="crack-stat-value" id="crackTotalAttempts">0</span>
+                                    <span class="crack-stat-label">Total Attempts</span>
+                                </div>
+                                <div class="crack-stat">
+                                    <span class="crack-stat-value" id="crackTotalTime">0ms</span>
+                                    <span class="crack-stat-label">Time Elapsed</span>
+                                </div>
+                                <div class="crack-stat">
+                                    <span class="crack-stat-value" id="crackAvgSpeed">0</span>
+                                    <span class="crack-stat-label">Hashes/sec</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- ==================== RECORDS SECTION ==================== -->
         <section class="section" id="sectionRecords">
             <div class="section-header">
@@ -289,7 +453,7 @@
     <!-- Toast Notification -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=5"></script>
 </body>
 
 </html>

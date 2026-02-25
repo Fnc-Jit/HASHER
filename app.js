@@ -22,8 +22,10 @@
     const dom = {
         // Nav
         navHasher: $('navHasher'),
+        navDehasher: $('navDehasher'),
         navRecords: $('navRecords'),
         sectionHasher: $('sectionHasher'),
+        sectionDehasher: $('sectionDehasher'),
         sectionRecords: $('sectionRecords'),
 
         // Input
@@ -80,6 +82,38 @@
 
         // BG
         bgParticles: $('bgParticles'),
+
+        // De-Hasher
+        dehashInput: $('dehashInput'),
+        dehashCharCount: $('dehashCharCount'),
+        dehashAlgorithm: $('dehashAlgorithm'),
+        dehashAlgoBadge: $('dehashAlgoBadge'),
+        toggleDict: $('toggleDict'),
+        toggleBrute: $('toggleBrute'),
+        bruteConfig: $('bruteConfig'),
+        bruteMaxLen: $('bruteMaxLen'),
+        bruteCharset: $('bruteCharset'),
+        crackBtn: $('crackBtn'),
+        crackLoading: $('crackLoading'),
+        crackStopBtn: $('crackStopBtn'),
+        crackProgress: $('crackProgress'),
+        crackProgressFill: $('crackProgressFill'),
+        crackAttempts: $('crackAttempts'),
+        crackSpeed: $('crackSpeed'),
+        crackElapsed: $('crackElapsed'),
+        dehashPlaceholder: $('dehashPlaceholder'),
+        crackResult: $('crackResult'),
+        crackResultAlgo: $('crackResultAlgo'),
+        crackResultMethod: $('crackResultMethod'),
+        crackResultTime: $('crackResultTime'),
+        crackStatusIcon: $('crackStatusIcon'),
+        crackStatusLabel: $('crackStatusLabel'),
+        crackPlaintext: $('crackPlaintext'),
+        copyPlaintextBtn: $('copyPlaintextBtn'),
+        crackFound: $('crackFound'),
+        crackTotalAttempts: $('crackTotalAttempts'),
+        crackTotalTime: $('crackTotalTime'),
+        crackAvgSpeed: $('crackAvgSpeed'),
     };
 
     // ───────── Init ─────────
@@ -128,6 +162,7 @@
     function bindEvents() {
         // Nav
         dom.navHasher.onclick = () => switchSection('hasher');
+        dom.navDehasher.onclick = () => switchSection('dehasher');
         dom.navRecords.onclick = () => { switchSection('records'); renderRecords(); };
 
         // Input toggle
@@ -169,9 +204,18 @@
         dom.exportRecordsBtn.onclick = exportCSV;
         dom.clearRecordsBtn.onclick = clearRecords;
 
-        // Settings
         // Theme toggle
         dom.themeToggle.onclick = toggleTheme;
+
+        // De-Hasher events
+        dom.dehashInput.oninput = () => {
+            dom.dehashCharCount.textContent = dom.dehashInput.value.length;
+            autoDetectHashAlgo(dom.dehashInput.value.trim());
+        };
+        dom.dehashAlgorithm.onchange = () => { dom.dehashAlgoBadge.textContent = dom.dehashAlgorithm.value; };
+        dom.crackBtn.onclick = startCrack;
+        dom.crackStopBtn.onclick = stopCrack;
+        dom.copyPlaintextBtn.onclick = copyPlaintext;
     }
 
     // ───────── Input Mode ─────────
@@ -394,6 +438,254 @@
         state.cryptoKey = null;
         dom.secretKeyPanel.classList.add('hidden');
         toast('Key removed — back to plain digest mode.', 'info');
+    }
+
+    // ───────── De-Hasher ─────────
+    let crackAbort = false;
+
+    const DICTIONARY = [
+        'password', '123456', '12345678', 'qwerty', 'abc123', 'monkey', '1234567', 'letmein',
+        'trustno1', 'dragon', 'baseball', 'iloveyou', 'master', 'sunshine', 'ashley', 'bailey',
+        'shadow', '123123', '654321', 'superman', 'qazwsx', 'michael', 'football', 'password1',
+        'password123', 'batman', 'login', 'admin', 'hello', 'charlie', 'donald', 'starwars',
+        'access', 'flower', 'hottie', 'loveme', 'zaq1zaq1', 'mustang', 'test', 'testing',
+        'welcome', 'secret', 'ninja', 'passw0rd', 'whatever', 'qwerty123', '1q2w3e4r',
+        'root', 'toor', 'pass', 'guest', 'info', 'mysql', 'user', 'changeme', 'hunter2',
+        'letmein1', 'killer', 'trustme', 'ranger', 'buster', 'thomas', 'robert', 'soccer',
+        'hockey', 'george', 'hunter', 'harley', 'pepper', 'joshua', 'matrix', 'cheese',
+        'amanda', 'summer', 'winter', 'spring', 'autumn', 'diamond', 'ginger', 'silver',
+        'cookie', 'coffee', 'computer', 'internet', 'security', 'hacker', 'crypto',
+        'bitcoin', 'blockchain', 'ethereum', 'network', 'server', 'system', 'program',
+        'code', 'developer', 'script', 'data', 'cloud', 'linux', 'windows', 'apple',
+        'google', 'amazon', 'facebook', 'twitter', 'github', 'python', 'javascript',
+        'java', 'ruby', 'golang', 'rust', 'react', 'angular', 'nodejs', 'database',
+        'mysql', 'postgres', 'mongodb', 'redis', 'docker', 'nginx', 'apache', 'ubuntu',
+        'debian', 'fedora', 'centos', 'arch', 'vim', 'emacs', 'git', 'ssh', 'ftp', 'http',
+        'https', 'api', 'json', 'xml', 'html', 'css', 'sql', 'bash', 'shell', 'terminal',
+        'console', 'command', 'kernel', 'memory', 'process', 'thread', 'socket', 'port',
+        'proxy', 'firewall', 'vpn', 'dns', 'tcp', 'udp', 'ssl', 'tls', 'aes', 'rsa', 'sha',
+        'md5', 'hash', 'salt', 'token', 'session', 'cookie', 'cache', 'queue', 'stack',
+        'heap', 'tree', 'graph', 'array', 'list', 'map', 'set', 'string', 'number',
+        'boolean', 'null', 'undefined', 'true', 'false', 'function', 'class', 'object',
+        'module', 'package', 'import', 'export', 'const', 'let', 'var', 'if', 'else',
+        'for', 'while', 'do', 'switch', 'case', 'break', 'continue', 'return', 'try',
+        'catch', 'throw', 'new', 'delete', 'typeof', 'instanceof', 'void', 'this',
+        'super', 'extends', 'implements', 'interface', 'abstract', 'static', 'final',
+        'public', 'private', 'protected', 'default', 'yield', 'async', 'await',
+        'promise', 'callback', 'event', 'error', 'warning', 'info', 'debug', 'trace',
+        'log', 'print', 'write', 'read', 'open', 'close', 'send', 'receive', 'connect',
+        'disconnect', 'start', 'stop', 'pause', 'resume', 'reset', 'init', 'setup',
+        'config', 'option', 'setting', 'parameter', 'argument', 'value', 'key', 'name',
+        'type', 'size', 'length', 'count', 'index', 'position', 'offset', 'range',
+        'limit', 'timeout', 'interval', 'delay', 'duration', 'timestamp', 'date',
+        'time', 'year', 'month', 'day', 'hour', 'minute', 'second', 'hello', 'world',
+        'foo', 'bar', 'baz', 'qux', 'test', 'demo', 'example', 'sample',
+        'temp', 'tmp', 'backup', 'archive', 'log', 'data', 'file', 'folder', 'directory',
+        'path', 'url', 'uri', 'link', 'route', 'endpoint', 'controller', 'model', 'view',
+        'service', 'repository', 'factory', 'builder', 'adapter', 'proxy', 'decorator',
+        'observer', 'strategy', 'command', 'state', 'template', 'singleton', 'prototype',
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'ab', 'cd', 'ef', 'gh', 'ij', 'kl', 'mn', 'op',
+        'qr', 'st', 'uv', 'wx', 'yz', 'abc', 'def', 'ghi', 'jkl', 'mno', 'pqr', 'stu', 'vwx',
+        'aa', 'bb', 'cc', 'dd', 'ee', 'ff', 'gg', 'hh', 'ii', 'jj', 'kk', 'll', 'mm', 'nn',
+        'oo', 'pp', 'qq', 'rr', 'ss', 'tt', 'uu', 'vv', 'ww', 'xx', 'yy', 'zz',
+        'aaa', 'bbb', 'ccc', 'ddd', 'eee', 'fff', 'aabb', 'abcd', '1234', '0000', '1111',
+        '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '0123', '9876',
+        'love', 'hate', 'good', 'evil', 'life', 'dead', 'king', 'queen', 'god', 'devil',
+        'angel', 'demon', 'hero', 'zero', 'star', 'moon', 'sun', 'fire', 'water', 'earth',
+        'wind', 'ice', 'rock', 'metal', 'wood', 'gold', 'iron', 'dark', 'light', 'black',
+        'white', 'red', 'blue', 'green', 'pink', 'orange', 'purple',
+        'cat', 'dog', 'bird', 'fish', 'bear', 'wolf', 'lion', 'tiger', 'eagle', 'snake',
+        'mike', 'john', 'jane', 'alex', 'anna', 'emma', 'jack', 'james', 'david', 'mark',
+        'paul', 'peter', 'mary', 'sarah', 'lisa', 'laura', 'chris', 'tom', 'bob', 'alice',
+        'eve', 'oscar', 'charlie1', 'jordan', 'taylor', 'sam', 'max', 'leo', 'noah',
+        'liam', 'olivia', 'sophia', 'mia', 'lucas', 'ethan', 'mason', 'logan', 'jacob',
+        '12345', '123456789', '1234567890', '0987654321', 'password!', 'p@ssw0rd',
+        'P@ssword1', 'Welcome1', 'Admin123', 'Test1234', 'Qwerty1', 'Abc1234',
+        'iloveu', 'princess', 'monkey123', 'dragon1', 'master1', 'qwerty1',
+        'letmein!', 'trustno1!', 'baseball1', 'football1', 'shadow1', 'michael1',
+    ];
+
+    function setCrackMethod(method) {
+        state.crackMethod = method;
+        dom.toggleDict.classList.toggle('active', method === 'dictionary');
+        dom.toggleBrute.classList.toggle('active', method === 'bruteforce');
+        dom.bruteConfig.classList.toggle('hidden', method !== 'bruteforce');
+    }
+
+    function autoDetectHashAlgo(hash) {
+        if (!/^[a-f0-9]+$/i.test(hash)) return;
+        const lenMap = { 32: 'MD5', 40: 'SHA-1', 64: 'SHA-256', 96: 'SHA-384', 128: 'SHA-512' };
+        const detected = lenMap[hash.length];
+        if (detected) {
+            dom.dehashAlgorithm.value = detected;
+            dom.dehashAlgoBadge.textContent = detected;
+            toast('Auto-detected: ' + detected, 'info');
+        }
+    }
+
+    async function hashText(text, algo) {
+        const data = new TextEncoder().encode(text);
+        if (algo === 'MD5') return md5(data);
+        const buf = await crypto.subtle.digest(algo, data);
+        return bufToHex(buf);
+    }
+
+    function updateCrackProgress(attempts, startTime, total) {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const speed = Math.round(attempts / Math.max(elapsed, 0.001));
+        const pct = total ? Math.min((attempts / total) * 100, 100) : 0;
+        dom.crackAttempts.textContent = attempts.toLocaleString();
+        dom.crackSpeed.textContent = speed.toLocaleString();
+        dom.crackElapsed.textContent = elapsed.toFixed(1) + 's';
+        dom.crackProgressFill.style.width = pct + '%';
+    }
+
+    async function startCrack() {
+        const targetHash = dom.dehashInput.value.replace(/\s+/g, '').toLowerCase();
+        if (!targetHash) { toast('Please paste a hash to crack.', 'error'); return; }
+        if (!/^[a-f0-9]+$/.test(targetHash)) { toast('Invalid hash — must be a hex string.', 'error'); return; }
+
+        const algo = dom.dehashAlgorithm.value;
+        crackAbort = false;
+
+        // UI: show progress, hide placeholder
+        dom.dehashPlaceholder.classList.add('hidden');
+        dom.crackResult.classList.add('hidden');
+        dom.crackProgress.classList.remove('hidden');
+        dom.crackProgressFill.style.width = '0%';
+        dom.crackLoading.classList.remove('hidden');
+        dom.crackBtn.querySelector('.btn-label').textContent = 'Cracking…';
+        dom.crackBtn.disabled = true;
+        dom.crackStopBtn.style.display = '';
+
+        const startTime = performance.now();
+        let found = null;
+        let totalAttempts = 0;
+        let method = 'Combined';
+
+        // Charset for brute force
+        const maxLen = parseInt(dom.bruteMaxLen.value) || 4;
+        const charsetKey = dom.bruteCharset.value || 'alnum';
+        let chars = 'abcdefghijklmnopqrstuvwxyz';
+        if (charsetKey === 'alnum') chars += '0123456789';
+        if (charsetKey === 'full') chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        // Calculate total work: dictionary + brute force combos
+        let totalBrute = 0;
+        for (let len = 1; len <= maxLen; len++) totalBrute += Math.pow(chars.length, len);
+        const grandTotal = DICTIONARY.length + totalBrute;
+
+        try {
+            // ── Phase 1: Dictionary ──
+            for (let i = 0; i < DICTIONARY.length; i++) {
+                if (crackAbort) break;
+                const word = DICTIONARY[i];
+                const h = await hashText(word, algo);
+                totalAttempts++;
+                if (h === targetHash) { found = word; method = 'Dictionary'; break; }
+                if (i % 100 === 0) {
+                    updateCrackProgress(totalAttempts, startTime, grandTotal);
+                    await new Promise(r => setTimeout(r, 0));
+                }
+            }
+
+            // ── Phase 2: Brute Force (if not found yet) ──
+            if (!found && !crackAbort) {
+                outer:
+                for (let len = 1; len <= maxLen; len++) {
+                    const indices = new Array(len).fill(0);
+                    while (true) {
+                        if (crackAbort) break outer;
+                        const candidate = indices.map(i => chars[i]).join('');
+                        const h = await hashText(candidate, algo);
+                        totalAttempts++;
+                        if (h === targetHash) { found = candidate; method = 'Brute Force'; break outer; }
+
+                        if (totalAttempts % 500 === 0) {
+                            updateCrackProgress(totalAttempts, startTime, grandTotal);
+                            await new Promise(r => setTimeout(r, 0));
+                        }
+
+                        // Increment indices
+                        let carry = len - 1;
+                        while (carry >= 0) {
+                            indices[carry]++;
+                            if (indices[carry] < chars.length) break;
+                            indices[carry] = 0;
+                            carry--;
+                        }
+                        if (carry < 0) break;
+                    }
+                }
+            }
+            updateCrackProgress(totalAttempts, startTime, grandTotal);
+        } catch (err) {
+            toast('Crack failed: ' + err.message, 'error');
+        }
+
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+        const speed = Math.round(totalAttempts / Math.max(parseFloat(elapsed), 0.001));
+
+        // Show result
+        showCrackResult(found, algo, method, elapsed, totalAttempts, speed);
+    }
+
+    function stopCrack() {
+        crackAbort = true;
+        toast('Crack aborted.', 'info');
+    }
+
+    function showCrackResult(found, algo, method, elapsed, attempts, speed) {
+        dom.crackLoading.classList.add('hidden');
+        dom.crackBtn.querySelector('.btn-label').textContent = 'Crack It';
+        dom.crackBtn.disabled = false;
+        dom.crackStopBtn.style.display = 'none';
+        dom.crackProgress.classList.add('hidden');
+        dom.crackResult.classList.remove('hidden');
+
+        dom.crackResultAlgo.textContent = '🔒 ' + algo;
+        dom.crackResultMethod.textContent = method === 'dictionary' ? '📖 Dictionary' : '💪 Brute Force';
+        dom.crackResultTime.textContent = '⏱ ' + elapsed + 's';
+
+        if (found !== null) {
+            dom.crackStatusIcon.textContent = '✅';
+            dom.crackStatusLabel.textContent = 'Plaintext Found!';
+            dom.crackStatusLabel.className = 'crack-status-label crack-success';
+            dom.crackPlaintext.textContent = found;
+            dom.crackPlaintext.style.display = '';
+            dom.copyPlaintextBtn.style.display = '';
+            dom.crackFound.classList.remove('crack-not-found');
+            dom.crackFound.classList.add('crack-found-success');
+        } else {
+            dom.crackStatusIcon.textContent = '❌';
+            dom.crackStatusLabel.textContent = crackAbort ? 'Aborted' : 'Not Found';
+            dom.crackStatusLabel.className = 'crack-status-label crack-fail';
+            dom.crackPlaintext.textContent = crackAbort
+                ? 'Cracking was stopped by user.'
+                : 'No match found in ' + (method === 'dictionary' ? 'dictionary' : 'brute-force search') + '.';
+            dom.crackPlaintext.style.display = '';
+            dom.copyPlaintextBtn.style.display = 'none';
+            dom.crackFound.classList.add('crack-not-found');
+            dom.crackFound.classList.remove('crack-found-success');
+        }
+
+        dom.crackTotalAttempts.textContent = attempts.toLocaleString();
+        dom.crackTotalTime.textContent = elapsed + 's';
+        dom.crackAvgSpeed.textContent = speed.toLocaleString();
+    }
+
+    async function copyPlaintext() {
+        const text = dom.crackPlaintext.textContent;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            dom.copyPlaintextBtn.querySelector('.copy-label').textContent = 'Copied!';
+            setTimeout(() => { dom.copyPlaintextBtn.querySelector('.copy-label').textContent = 'Copy'; }, 1500);
+            toast('Plaintext copied!', 'success');
+        } catch {
+            toast('Failed to copy.', 'error');
+        }
     }
 
     // ───────── Show Result ─────────
